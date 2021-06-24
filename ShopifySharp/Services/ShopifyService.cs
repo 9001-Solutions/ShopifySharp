@@ -106,12 +106,29 @@ namespace ShopifySharp
             return new RequestUri(ub.Uri);
         }
 
+        protected Uri PrepareRequest(string path, Parameterizable queryParams, string fields)
+        {
+            RequestUri req = PrepareRequest(path);
+
+            if (queryParams != null)
+            {
+                req.QueryParams.AddRange(queryParams.ToQueryParameters());
+            }
+
+            if (!string.IsNullOrEmpty(fields))
+            {
+                req.QueryParams.Add("fields", fields);
+            }
+
+            return req.ToUri();
+        }
+
         /// <summary>
         /// Prepares a request to the path and appends the shop's access token header if applicable.
         /// </summary>
-        protected CloneableRequestMessage PrepareRequestMessage(RequestUri uri, HttpMethod method, HttpContent content = null)
+        protected CloneableRequestMessage PrepareRequestMessage(Uri uri, HttpMethod method, HttpContent content = null)
         {
-            var msg = new CloneableRequestMessage(uri.ToUri(), method, content);
+            var msg = new CloneableRequestMessage(uri, method, content);
 
             if (!string.IsNullOrEmpty(_AccessToken))
             {
@@ -148,7 +165,7 @@ namespace ShopifySharp
         protected async Task<RequestResult<JToken>> ExecuteRequestAsync(RequestUri uri, HttpMethod method,
             CancellationToken cancellationToken, HttpContent content = null)
         {
-            using (var baseRequestMessage = PrepareRequestMessage(uri, method, content))
+            using (var baseRequestMessage = PrepareRequestMessage(uri.ToUri(), method, content))
             {
                 var policyResult = await _ExecutionPolicy.Run(baseRequestMessage, async (requestMessage) =>
                 {
@@ -188,7 +205,20 @@ namespace ShopifySharp
         /// <remarks>
         /// This method will automatically dispose the <paramref name="baseRequestMessage" /> when finished.
         /// </remarks>
-        protected async Task<RequestResult<T>> ExecuteRequestAsync<T>(RequestUri uri, HttpMethod method,
+        protected Task<RequestResult<T>> ExecuteRequestAsync<T>(RequestUri uri, HttpMethod method,
+            CancellationToken cancellationToken, HttpContent content = null, string rootElement = null)
+        {
+            return ExecuteRequestAsync<T>(uri.ToUri(), method, cancellationToken, content, rootElement);
+        }
+
+        /// <summary>
+        /// Executes a request and returns the given type. Throws an exception when the response is invalid.
+        /// Use this method when the expected response is a single line or simple object that doesn't warrant its own class.
+        /// </summary>
+        /// <remarks>
+        /// This method will automatically dispose the <paramref name="baseRequestMessage" /> when finished.
+        /// </remarks>
+        protected async Task<RequestResult<T>> ExecuteRequestAsync<T>(Uri uri, HttpMethod method,
             CancellationToken cancellationToken, HttpContent content = null, string rootElement = null)
         {
             using (var baseRequestMessage = PrepareRequestMessage(uri, method, content))
@@ -247,19 +277,7 @@ namespace ShopifySharp
 
         private async Task<RequestResult<T>> ExecuteGetCoreAsync<T>(string path, string resultRootElt, Parameterizable queryParams, string fields, CancellationToken cancellationToken)
         {
-            var req = PrepareRequest(path);
-
-            if (queryParams != null)
-            {
-                req.QueryParams.AddRange(queryParams.ToQueryParameters());
-            }
-
-            if (!string.IsNullOrEmpty(fields))
-            {
-                req.QueryParams.Add("fields", fields);
-            }
-
-            return await ExecuteRequestAsync<T>(req, HttpMethod.Get, cancellationToken: cancellationToken, rootElement: resultRootElt);
+            return await ExecuteRequestAsync<T>(PrepareRequest(path, queryParams, fields), HttpMethod.Get, cancellationToken: cancellationToken, rootElement: resultRootElt);
         }
 
         protected async Task<T> ExecuteGetAsync<T>(string path, string resultRootElt, string fields, CancellationToken cancellationToken = default)
