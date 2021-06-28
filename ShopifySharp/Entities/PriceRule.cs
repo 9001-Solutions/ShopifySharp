@@ -71,12 +71,20 @@ namespace ShopifySharp
         */
         [JsonProperty("prerequisite_subtotal_range")]
         public PrerequisiteValueRange PrerequisiteSubtotalRange { get; set; }
+        [JsonProperty("prerequisite_quantity_range")]
+        public PrerequisiteValueRange PrerequisiteQuantityRange { get; set; }
+
+        [JsonProperty("prerequisite_to_entitlement_quantity_ratio")]
+        public PrerequisiteToEntitlementQuantityRatio PrerequisiteToEntitlementQuantityRatio { get; set; }
 
         /**
         * Prerequisite shipping cost range.Can only be used when target_type is shipping_line.
         */
         [JsonProperty("prerequisite_shipping_price_range")]
         public PrerequisiteValueRange PrerequisiteShippingPriceRange { get; set; }
+        
+        [JsonProperty("prerequisite_to_entitlement_purchase")]
+        public PrerequisiteToEntitlementPurchase PrerequisiteToEntitlementPurchase { get; set; }
 
         /**
         * A list of prerequisite customer saved search ids. For the price rule to be applicable,
@@ -114,6 +122,17 @@ namespace ShopifySharp
         */
         [JsonProperty("entitled_collection_ids")]
         public IEnumerable<long> EntitledCollectionIds { get; set; }
+        
+        
+        
+        [JsonProperty("prerequisite_product_ids")]
+        public IEnumerable<long> PrerequisiteProductIds { get; set; }
+        [JsonProperty("prerequisite_variant_ids")]
+        public IEnumerable<long> PrerequisiteVariantIds { get; set; }
+        [JsonProperty("prerequisite_collection_ids")]
+        public IEnumerable<long> PrerequisiteCollectionIds { get; set; }
+        
+        
 
         /**
         * A list of shipping country ids. entitled_country_ids can only be used in conjunction with target_type set to
@@ -145,5 +164,20 @@ namespace ShopifySharp
         */
         [JsonProperty("updated_at")]
         public DateTimeOffset? UpdatedAt { get; set; }
+
+    }
+
+    public class PrerequisiteToEntitlementQuantityRatio
+    {
+        [JsonProperty("prerequisite_quantity")]
+        public int? PrerequisiteQuantity { get; set; }
+        [JsonProperty("entitled_quantity")]
+        public int? EntitledQuantity { get; set; }
+    }
+
+    public class PrerequisiteToEntitlementPurchase
+    {
+        [JsonProperty("prerequisite_amount")]
+        public decimal? PrerequisiteAmount { get; set; }
     }
 }
