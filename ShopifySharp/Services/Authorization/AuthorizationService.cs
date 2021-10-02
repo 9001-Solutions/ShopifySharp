@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Security.Cryptography;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using ShopifySharp.Enums;
 using ShopifySharp.Infrastructure;
-using Microsoft.Extensions.Primitives;
-using System.Text.RegularExpressions;
-using System.Net.Http.Headers;
-using System.Reflection;
 
 namespace ShopifySharp
 {
@@ -116,15 +116,20 @@ namespace ShopifySharp
             }
 
             string hmac = hmacValues.First();
+            var calculatedSignature = ComputeValidHmac(querystring, shopifySecretKey);
+
+            //Request is valid if the calculated signature matches the signature from the querystring.
+            return calculatedSignature.ToUpper() == hmac.ToUpper();
+        }
+
+        public static string ComputeValidHmac(IEnumerable<KeyValuePair<string, StringValues>> querystring, string shopifySecretKey)
+        {
             string kvps = PrepareQuerystring(querystring, "&");
             var hmacHasher = new HMACSHA256(Encoding.UTF8.GetBytes(shopifySecretKey));
             var hash = hmacHasher.ComputeHash(Encoding.UTF8.GetBytes(string.Join("&", kvps)));
 
             //Convert bytes back to string, replacing dashes, to get the final signature.
-            var calculatedSignature = BitConverter.ToString(hash).Replace("-", "");
-
-            //Request is valid if the calculated signature matches the signature from the querystring.
-            return calculatedSignature.ToUpper() == hmac.ToUpper();
+            return BitConverter.ToString(hash).Replace("-", "");
         }
 
         /// <summary>
